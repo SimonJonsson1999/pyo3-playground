@@ -1,4 +1,6 @@
+use numpy::PyReadonlyArray1;
 use pyo3::prelude::*;
+
 
 #[derive(Debug, Clone, Copy)]
 enum Position {
@@ -85,10 +87,6 @@ fn impact_score(row: &PlayerRow) -> f64 {
 
     score
 }
-#[pyfunction]
-fn hello() -> String {
-    "hello from rust".to_string()
-}
 
 #[pyfunction]
 fn compute_scores(
@@ -171,10 +169,117 @@ fn compute_scores(
     Ok(scores)
 }
 
+#[pyfunction]
+fn compute_scores_numpy(
+    positions: PyReadonlyArray1<u8>,
+    goals: PyReadonlyArray1<f64>,
+    assists: PyReadonlyArray1<f64>,
+    shots_on_target: PyReadonlyArray1<f64>,
+    expected_goals_xg: PyReadonlyArray1<f64>,
+    expected_assists_xa: PyReadonlyArray1<f64>,
+    key_passes: PyReadonlyArray1<f64>,
+    successful_passes: PyReadonlyArray1<f64>,
+    successful_dribbles: PyReadonlyArray1<f64>,
+    tackles: PyReadonlyArray1<f64>,
+    interceptions: PyReadonlyArray1<f64>,
+    recoveries: PyReadonlyArray1<f64>,
+    fouls_committed: PyReadonlyArray1<f64>,
+    yellow_cards: PyReadonlyArray1<f64>,
+    red_cards: PyReadonlyArray1<f64>,
+    saves: PyReadonlyArray1<f64>,
+    clean_sheet: PyReadonlyArray1<f64>,
+    goals_conceded: PyReadonlyArray1<f64>,
+    clearances: PyReadonlyArray1<f64>,
+    blocks: PyReadonlyArray1<f64>,
+    aerial_duels_won: PyReadonlyArray1<f64>,
+    pass_accuracy: PyReadonlyArray1<f64>,
+    possession_impact: PyReadonlyArray1<f64>,
+    creativity_score: PyReadonlyArray1<f64>,
+    offensive_contribution: PyReadonlyArray1<f64>,
+    clutch_performance_score: PyReadonlyArray1<f64>,
+) -> PyResult<Vec<f64>> {
+    let positions = positions.as_slice()?;
+    let goals = goals.as_slice()?;
+    let assists = assists.as_slice()?;
+    let shots_on_target = shots_on_target.as_slice()?;
+    let expected_goals_xg = expected_goals_xg.as_slice()?;
+    let expected_assists_xa = expected_assists_xa.as_slice()?;
+    let key_passes = key_passes.as_slice()?;
+    let successful_passes = successful_passes.as_slice()?;
+    let successful_dribbles = successful_dribbles.as_slice()?;
+    let tackles = tackles.as_slice()?;
+    let interceptions = interceptions.as_slice()?;
+    let recoveries = recoveries.as_slice()?;
+    let fouls_committed = fouls_committed.as_slice()?;
+    let yellow_cards = yellow_cards.as_slice()?;
+    let red_cards = red_cards.as_slice()?;
+    let saves = saves.as_slice()?;
+    let clean_sheet = clean_sheet.as_slice()?;
+    let goals_conceded = goals_conceded.as_slice()?;
+    let clearances = clearances.as_slice()?;
+    let blocks = blocks.as_slice()?;
+    let aerial_duels_won = aerial_duels_won.as_slice()?;
+    let pass_accuracy = pass_accuracy.as_slice()?;
+    let possession_impact = possession_impact.as_slice()?;
+    let creativity_score = creativity_score.as_slice()?;
+    let offensive_contribution = offensive_contribution.as_slice()?;
+    let clutch_performance_score = clutch_performance_score.as_slice()?;
+
+    let n = goals.len();
+
+    let mut scores = Vec::with_capacity(n);
+
+    for i in 0..n {
+        let position = match positions[i] {
+            0 => Position::Goalkeeper,
+            1 => Position::Defender,
+            2 => Position::Midfielder,
+            3 => Position::Forward,
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    format!("Invalid position: {}", positions[i]),
+                ));
+            }
+        };
+
+        let row = PlayerRow {
+            position,
+            goals: goals[i],
+            assists: assists[i],
+            shots_on_target: shots_on_target[i],
+            expected_goals_xg: expected_goals_xg[i],
+            expected_assists_xa: expected_assists_xa[i],
+            key_passes: key_passes[i],
+            successful_passes: successful_passes[i],
+            successful_dribbles: successful_dribbles[i],
+            tackles: tackles[i],
+            interceptions: interceptions[i],
+            recoveries: recoveries[i],
+            fouls_committed: fouls_committed[i],
+            yellow_cards: yellow_cards[i],
+            red_cards: red_cards[i],
+            saves: saves[i],
+            clean_sheet: clean_sheet[i],
+            goals_conceded: goals_conceded[i],
+            clearances: clearances[i],
+            blocks: blocks[i],
+            aerial_duels_won: aerial_duels_won[i],
+            pass_accuracy: pass_accuracy[i],
+            possession_impact: possession_impact[i],
+            creativity_score: creativity_score[i],
+            offensive_contribution: offensive_contribution[i],
+            clutch_performance_score: clutch_performance_score[i],
+        };
+
+        scores.push(impact_score(&row));
+    }
+
+    Ok(scores)
+}
 
 #[pymodule]
 fn football_kernel(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(compute_scores_numpy, m)?)?;
     m.add_function(wrap_pyfunction!(compute_scores, m)?)?;
-    m.add_function(wrap_pyfunction!(hello, m)?)?;
     Ok(())
 }
